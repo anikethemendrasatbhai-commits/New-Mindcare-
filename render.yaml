@@ -1,0 +1,37 @@
+# Render Blueprint. Replace the placeholder values, then "New > Blueprint" in Render.
+databases:
+  - name: mindcare-db
+    plan: free            # use a paid plan for real users (backups, no expiry)
+    databaseName: mindcare
+    user: mindcare
+
+services:
+  - type: web
+    name: mindcare-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    healthCheckPath: /api/health
+    envVars:
+      - key: ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase: { name: mindcare-db, property: connectionString }   # change scheme to postgresql+psycopg:// (see docs/DEPLOYMENT.md)
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FRONTEND_ORIGINS
+        value: https://YOUR-APP.vercel.app
+      - key: FRONTEND_BASE_URL
+        value: https://YOUR-APP.vercel.app
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_SAMESITE
+        value: lax
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
